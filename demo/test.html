@@ -1,43 +1,65 @@
 <html>
   <head>
-    <title>Radar | Test SDK Script</title>
+    <meta name="viewport" content="width=device-width">
+    <title>APIVIS | Test SDK Script</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha256-3edrmyuQ0w65f8gfBsqowzjJe2iM6n0nKciPUp8y+7E=" crossorigin="anonymous"></script>
 
-    <script src="../dist/radar.js"></script>
-
+    <script src="https://js.radar.io/v3/radar.min.js"></script>
     <style>
-      .links .btn.active {
-        background-color: #545b62;
-        border-color: #4e555b;
-      }
+          .links .btn.active {
+            background-color: #545b62;
+            border-color: #4e555b;
+          }
 
-      .result {
-        background-color: #f7f7f9;
-        border-radius: 0.5rem;
-        padding: 1.5rem;
-      }
+          .result {
+            background-color: #f7f7f9;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+          }
 
-      pre {
-        margin: 0;
-      }
-    </style>
+          pre {
+            margin: 0;
+          }
+        </style>
+        <script src="https://cdn.onesignal.com/sdks/OneSignalSDK.js" async=""></script>
+        <script>
+          window.OneSignal = window.OneSignal || [];
+          OneSignal.push(function() {
+            OneSignal.init({
+              appId: "65f3e411-689d-4d80-889e-79318a6ac7a1",
+            });
+          });
+        </script>
   </head>
   <body>
-    <div class="links pl-3 pt-3">
-      <div class="btn-group" role="group" aria-label="Basic example">
-        <a href='/' role="button" class="std-link btn btn-secondary">radar.js</a>
-        <a href='/?min' role="button" class="min-link btn btn-secondary">radar.min.js</a>
+
+    <div class="container p-3 ">
+      <div>
+<p>Start tracking and see if you can find the geofences..</p>
+      </div>
+      <div class="row">
+        <div class="col  ">
+          <form id="track-once" class="form-inline">
+          <!--<input id="your-name" class="form-control mr-2 mt-2" type="text" name="publishable-key" placeholder="Enter your name" style="width: 200px;"/>-->
+             <button id="track-btn" class="btn btn-primary mt-2">Track every 30 sec</button>
+          </form>
+        </div>
+        <div class="col ">
+          <form id="stop-once" class="">
+          <!--  <input id="publishable-key" class="form-control mr-sm-2" type="text" name="publishable-key" placeholder="Enter Publishable Key" style="width: 500px;"/>-->
+            <button id="stop-btn" class="btn btn-warning mt-2">Stop Tracking</button>
+          </form>
+        </div>
+
       </div>
     </div>
 
-    <div class="p-3">
-      <form id="track-once" class="form-inline mb-0">
-        <input id="publishable-key" class="form-control mr-sm-2" type="text" name="publishable-key" placeholder="Enter Publishable Key" style="width: 500px;"/>
-        <button id="track-btn" class="btn btn-primary">Call Track Once</button>
-      </form>
-    </div>
 
+
+
+    <div class="container p-3">
+      <div class="row">
     <div class="loader pl-3 d-none">
       <!-- By Sam Herbert (@sherb), for everyone. More @ http://goo.gl/7AJzbL -->
       <svg width="44" height="44" viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg" stroke="#007bff">
@@ -88,58 +110,88 @@
         </div>
       </div>
     </div>
+</div>
+</div>
 
     <script>
+  $('#stop-once').on('submit', function(e) {
+    clearInterval(myVar);
+  });
+
       $('#track-once').on('submit', function(e) {
+        clearInterval(myVar);
         e.preventDefault();
-        $('input,button').prop('disabled', true);
+        $('.btn-primary').prop('disabled', true);
         $('.loader').removeClass('d-none');
         $('.error').addClass('d-none');
         $('.results').addClass('d-none');
 
-        let publishableKey = $('#publishable-key').val();
+        let publishableKey = 'prj_test_pk_8703906b717691b8764c2ae5051ea96481c525e1';
+        OneSignal.getUserId().then(function(userId) {
+          console.log("OneSignal User ID:", userId);
+      //let description = $('#your-name').val();
+      Radar.setDescription(userId);
+      console.log("Added userId to Radar!");
+    // (Output) OneSignal User ID: 270a35cd-4dda-4b3f-b04e-41d7463a2316
+  });
+
+
+
 
         Radar.initialize(publishableKey);
+        function myTimer() {
+          Radar.trackOnce(function(err, responseObj, response) {
+            const location = responseObj.location;
+            const user = responseObj.user;
+            const events = responseObj.events;
 
-        Radar.trackOnce(function(err, responseObj, response) {
-          const location = responseObj.location;
-          const user = responseObj.user;
-          const events = responseObj.events;
+            console.log(err, location, user, events, response);
 
-          console.log(err, location, user, events, response);
+            $('input,button').prop('disabled', false);
+            //$('.loader').addClass('d-none');
 
-          $('input,button').prop('disabled', false);
-          $('.loader').addClass('d-none');
+            if (err) {
+              clearInterval(myVar);
+              console.error(err);
+              $('.loader').addClass('d-none');
+              $('#error-message').html(err);
+              $('.error').removeClass('d-none');
+              return;
+            }
 
-          if (err) {
-            console.error(err);
-            $('#error-message').html(err);
-            $('.error').removeClass('d-none');
-            return;
-          }
+            $('#status').html(status);
 
-          $('#status').html(status);
+            $('#location').html(formatCode({
+              accuracy: location.accuracy,
+              altitude: location.altitude,
+              altitudeAccuracy: location.altitudeAccuracy,
+              heading: location.heading,
+              latitude: location.latitude,
+              longitude: location.longitude,
+              speed: location.speed,
+            }));
 
-          $('#location').html(formatCode({
-            accuracy: location.accuracy,
-            altitude: location.altitude,
-            altitudeAccuracy: location.altitudeAccuracy,
-            heading: location.heading,
-            latitude: location.latitude,
-            longitude: location.longitude,
-            speed: location.speed,
-          }));
+            $('#user').html(formatCode(user));
+            $('#events').html(formatCode(events));
 
-          $('#user').html(formatCode(user));
-          $('#events').html(formatCode(events));
+            $('.results').removeClass('d-none');
+            $('.loader').removeClass('d-none');
+          });
+          // end track once
+            console.log(' track each 30 second...');
+        }
 
-          $('.results').removeClass('d-none');
-        });
+
+        var myVar = myTimer()
+
+        myVar = setInterval(myTimer, 30000);
       });
 
       function formatCode(object) {
         return JSON.stringify(object, null, '  ');
       }
     </script>
+
+
   </body>
 </html>
